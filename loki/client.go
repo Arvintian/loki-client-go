@@ -33,9 +33,7 @@ const (
 	// pipeline stages
 	ReservedLabelTenantID = "__tenant_id__"
 
-	LatencyLabel = "filename"
-	HostLabel    = "host"
-	Version      = "0.0.1"
+	Version = "0.0.1"
 )
 
 var (
