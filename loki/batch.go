@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	// json "github.com/json-iterator/go"
-
 	"github.com/Arvintian/loki-client-go/pkg/logproto"
 )
 
