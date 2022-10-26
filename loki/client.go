@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	UserAgent = fmt.Sprintf("loki-client-go/%s", Version)
+	UserAgent = fmt.Sprintf("LokiGoClient/%s", Version)
 )
 
 // Client for pushing logs in snappy-compressed protos over HTTP.
@@ -56,7 +56,7 @@ type Client struct {
 type entry struct {
 	tenantID string
 	labels   model.LabelSet
-	logproto.Entry
+	value    logproto.Value
 }
 
 // New makes a new Client from config
@@ -94,7 +94,7 @@ func NewWithLogger(cfg Config, logger log.Logger) (*Client, error) {
 		return nil, err
 	}
 
-	c.client, err = config.NewClientFromConfig(cfg.Client, "loki-client-go", false, false)
+	c.client, err = config.NewClientFromConfig(cfg.Client, "LokiGoClient", false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +178,8 @@ func (c *Client) sendBatch(tenantID string, batch *batch) {
 		buf          []byte
 		entriesCount int
 	)
-	if c.cfg.EncodeJson {
-		buf, entriesCount, err = batch.encodeJSON()
-	} else {
-		buf, entriesCount, err = batch.encode()
-	}
+
+	buf, entriesCount, err = batch.encodeJSON()
 
 	if err != nil {
 		level.Error(c.logger).Log("msg", "error encoding batch", "error", err)
@@ -218,10 +215,8 @@ func (c *Client) send(ctx context.Context, tenantID string, buf []byte) (int, er
 		return -1, err
 	}
 	req = req.WithContext(ctx)
-	req.Header.Set("Content-Type", protoContentType)
-	if c.cfg.EncodeJson {
-		req.Header.Set("Content-Type", JSONContentType)
-	}
+
+	req.Header.Set("Content-Type", JSONContentType)
 	req.Header.Set("User-Agent", UserAgent)
 
 	// If the tenant ID is not empty promtail is running in multi-tenant mode, so
@@ -284,9 +279,9 @@ func (c *Client) Handle(ls model.LabelSet, t time.Time, s string) error {
 		delete(ls, ReservedLabelTenantID)
 	}
 
-	c.entries <- entry{tenantID, ls, logproto.Entry{
-		Timestamp: t,
-		Line:      s,
+	c.entries <- entry{tenantID, ls, logproto.Value{
+		fmt.Sprintf("%d", t.UnixNano()),
+		s,
 	}}
 	return nil
 }

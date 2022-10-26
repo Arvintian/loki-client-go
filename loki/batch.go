@@ -1,11 +1,10 @@
 package loki
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/snappy"
-	json "github.com/json-iterator/go"
+	// json "github.com/json-iterator/go"
 
 	"github.com/Arvintian/loki-client-go/pkg/logproto"
 )
@@ -37,19 +36,19 @@ func newBatch(entries ...entry) *batch {
 
 // add an entry to the batch
 func (b *batch) add(entry entry) {
-	b.bytes += len(entry.Line)
+	b.bytes += len(entry.value[1])
 
 	// Append the entry to an already existing stream (if any)
 	labels := entry.labels.String()
 	if stream, ok := b.streams[labels]; ok {
-		stream.Entries = append(stream.Entries, entry.Entry)
+		stream.Values = append(stream.Values, entry.value)
 		return
 	}
 
 	// Add the entry as a new stream
 	b.streams[labels] = &logproto.Stream{
-		Labels:  labels,
-		Entries: []logproto.Entry{entry.Entry},
+		Labels: entry.labels,
+		Values: []logproto.Value{entry.value},
 	}
 }
 
@@ -61,24 +60,12 @@ func (b *batch) sizeBytes() int {
 // sizeBytesAfter returns the size of the batch after the input entry
 // will be added to the batch itself
 func (b *batch) sizeBytesAfter(entry entry) int {
-	return b.bytes + len(entry.Line)
+	return b.bytes + len(entry.value)
 }
 
 // age of the batch since its creation
 func (b *batch) age() time.Duration {
 	return time.Since(b.createdAt)
-}
-
-// encode the batch as snappy-compressed push request, and returns
-// the encoded bytes and the number of encoded entries
-func (b *batch) encode() ([]byte, int, error) {
-	req, entriesCount := b.createPushRequest()
-	buf, err := proto.Marshal(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	buf = snappy.Encode(nil, buf)
-	return buf, entriesCount, nil
 }
 
 // encode the batch as json push request, and returns
@@ -101,7 +88,7 @@ func (b *batch) createPushRequest() (*logproto.PushRequest, int) {
 	entriesCount := 0
 	for _, stream := range b.streams {
 		req.Streams = append(req.Streams, *stream)
-		entriesCount += len(stream.Entries)
+		entriesCount += len(stream.Values)
 	}
 	return &req, entriesCount
 }
