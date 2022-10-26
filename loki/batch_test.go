@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/grafana/loki-client-go/pkg/logproto"
+	"github.com/Arvintian/loki-client-go/pkg/logproto"
 )
 
 func TestBatch_add(t *testing.T) {

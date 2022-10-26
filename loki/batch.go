@@ -7,7 +7,7 @@ import (
 	"github.com/golang/snappy"
 	json "github.com/json-iterator/go"
 
-	"github.com/grafana/loki-client-go/pkg/logproto"
+	"github.com/Arvintian/loki-client-go/pkg/logproto"
 )
 
 // batch holds pending log streams waiting to be sent to Loki, and it's used
