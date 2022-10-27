@@ -265,7 +265,16 @@ func (c *Client) Stop() {
 }
 
 // Handle implement EntryHandler; adds a new line to the next batch; send is async.
-func (c *Client) Handle(ls model.LabelSet, t time.Time, s string) error {
+func (c *Client) Handle(labels map[string]string, t time.Time, s string) error {
+	ls := model.LabelSet{}
+	for k, v := range labels {
+		ls[model.LabelName(k)] = model.LabelValue(v)
+	}
+
+	if err := ls.Validate(); err != nil {
+		return err
+	}
+
 	if len(c.externalLabels) > 0 {
 		ls = c.externalLabels.Merge(ls)
 	}
