@@ -30,7 +30,7 @@ const (
 	// pipeline stages
 	ReservedLabelTenantID = "__tenant_id__"
 
-	Version = "0.0.1"
+	Version = "v0.0.2"
 )
 
 var (
