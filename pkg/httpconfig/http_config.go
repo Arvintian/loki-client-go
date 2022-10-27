@@ -29,7 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mwitkow/go-conntrack"
 	"golang.org/x/net/http2"
 	"gopkg.in/yaml.v2"
 )
@@ -168,10 +167,6 @@ func NewRoundTripperFromConfig(cfg HTTPClientConfig, name string, disableKeepAli
 			IdleConnTimeout:       5 * time.Minute,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
-			DialContext: conntrack.NewDialContextFunc(
-				conntrack.DialWithTracing(),
-				conntrack.DialWithName(name),
-			),
 		}
 		if enableHTTP2 {
 			// HTTP/2 support is golang has many problematic cornercases where
