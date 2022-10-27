@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/prometheus/common/model"
+	"github.com/Arvintian/loki-client-go/pkg/model"
 	"gopkg.in/yaml.v2"
 )
 

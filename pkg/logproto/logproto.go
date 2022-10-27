@@ -1,7 +1,7 @@
 package logproto
 
 import (
-	"github.com/prometheus/common/model"
+	"github.com/Arvintian/loki-client-go/pkg/model"
 )
 
 type PushRequest struct {

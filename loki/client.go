@@ -7,18 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/Arvintian/loki-client-go/pkg/backoff"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-
-	"github.com/prometheus/common/config"
-	"github.com/prometheus/common/model"
+	"github.com/Arvintian/loki-client-go/pkg/httpconfig"
+	"github.com/Arvintian/loki-client-go/pkg/model"
 
 	"github.com/Arvintian/loki-client-go/pkg/helpers"
 	"github.com/Arvintian/loki-client-go/pkg/logproto"
@@ -42,7 +39,6 @@ var (
 
 // Client for pushing logs in snappy-compressed protos over HTTP.
 type Client struct {
-	logger  log.Logger
 	cfg     Config
 	client  *http.Client
 	quit    chan struct{}
@@ -59,12 +55,6 @@ type entry struct {
 	value    logproto.Value
 }
 
-// New makes a new Client from config
-func New(cfg Config) (*Client, error) {
-	logger := level.NewFilter(log.NewLogfmtLogger(os.Stdout), level.AllowWarn())
-	return NewWithLogger(cfg, logger)
-}
-
 // NewWithDefault creates a new client with default configuration.
 func NewWithDefault(url string) (*Client, error) {
 	cfg, err := NewDefaultConfig(url)
@@ -74,18 +64,16 @@ func NewWithDefault(url string) (*Client, error) {
 	return New(cfg)
 }
 
-// NewWithLogger makes a new Client from a logger and a config
-func NewWithLogger(cfg Config, logger log.Logger) (*Client, error) {
+// New makes a new Client from a config
+func New(cfg Config) (*Client, error) {
 	if cfg.URL.URL == nil {
 		return nil, errors.New("client needs target URL")
 	}
 
 	c := &Client{
-		logger:  log.With(logger, "component", "client", "host", cfg.URL.Host),
-		cfg:     cfg,
-		quit:    make(chan struct{}),
-		entries: make(chan entry),
-
+		cfg:            cfg,
+		quit:           make(chan struct{}),
+		entries:        make(chan entry),
 		externalLabels: cfg.ExternalLabels.LabelSet,
 	}
 
@@ -94,7 +82,7 @@ func NewWithLogger(cfg Config, logger log.Logger) (*Client, error) {
 		return nil, err
 	}
 
-	c.client, err = config.NewClientFromConfig(cfg.Client, "LokiGoClient", false, false)
+	c.client, err = httpconfig.NewClientFromConfig(cfg.Client, "LokiGoClient", false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +170,7 @@ func (c *Client) sendBatch(tenantID string, batch *batch) {
 	buf, entriesCount, err = batch.encodeJSON()
 
 	if err != nil {
-		level.Error(c.logger).Log("msg", "error encoding batch", "error", err)
+		log.Println("msg", "error encoding batch", "error", err)
 		return
 	}
 
@@ -197,13 +185,13 @@ func (c *Client) sendBatch(tenantID string, batch *batch) {
 			break
 		}
 
-		level.Warn(c.logger).Log("msg", "error sending batch, will retry", "status", status, "entriesCount", entriesCount, "error", err)
+		log.Println("msg", "error sending batch, will retry", "status", status, "entriesCount", entriesCount, "error", err)
 
 		backoff.Wait()
 	}
 
 	if err != nil {
-		level.Error(c.logger).Log("msg", "final error sending batch", "status", status, "entriesCount", entriesCount, "error", err)
+		log.Println("msg", "final error sending batch", "status", status, "entriesCount", entriesCount, "error", err)
 	}
 }
 
@@ -229,7 +217,7 @@ func (c *Client) send(ctx context.Context, tenantID string, buf []byte) (int, er
 	if err != nil {
 		return -1, err
 	}
-	defer helpers.LogError(c.logger, "closing response body", resp.Body.Close)
+	defer helpers.LogError("closing response body", resp.Body.Close)
 
 	if resp.StatusCode/100 != 2 {
 		scanner := bufio.NewScanner(io.LimitReader(resp.Body, maxErrMsgLen))

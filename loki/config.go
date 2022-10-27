@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/Arvintian/loki-client-go/pkg/backoff"
+	"github.com/Arvintian/loki-client-go/pkg/httpconfig"
 	"github.com/Arvintian/loki-client-go/pkg/labelutil"
 	"github.com/Arvintian/loki-client-go/pkg/urlutil"
-	"github.com/prometheus/common/config"
 )
 
 // NOTE the helm chart for promtail and fluent-bit also have defaults for these values, please update to match if you make changes here.
@@ -26,7 +26,7 @@ type Config struct {
 	BatchWait time.Duration
 	BatchSize int
 
-	Client config.HTTPClientConfig `yaml:",inline"`
+	Client httpconfig.HTTPClientConfig `yaml:",inline"`
 
 	BackoffConfig backoff.BackoffConfig `yaml:"backoff_config"`
 	// The labels to add to any time series or alerts when communicating with loki
